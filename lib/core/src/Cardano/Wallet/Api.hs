@@ -51,13 +51,13 @@ module Cardano.Wallet.Api
         , SelectCoins
 
     , ShelleyTransactions
+        , ConstructTransaction
         , SignTransaction
+        , ListTransactions
+        , GetTransaction
+        , DeleteTransaction
         , CreateTransactionOld
         , PostTransactionFeeOld
-        , ListTransactions
-        , DeleteTransaction
-        , GetTransaction
-        , ConstructTransaction
 
     , StakePools
         , ListStakePools
@@ -103,12 +103,13 @@ module Cardano.Wallet.Api
         , ByronSelectCoins
 
     , ByronTransactions
-        , CreateByronTransactionOld
-        , ListByronTransactions
-        , PostByronTransactionFeeOld
-        , DeleteByronTransaction
-        , GetByronTransaction
         , ConstructByronTransaction
+        , SignByronTransaction
+        , ListByronTransactions
+        , GetByronTransaction
+        , DeleteByronTransaction
+        , CreateByronTransactionOld
+        , PostByronTransactionFeeOld
 
     , ByronMigrations
         , MigrateByronWallet
@@ -167,7 +168,6 @@ import Cardano.Wallet.Api.Types
     , ApiAddressT
     , ApiAsset
     , ApiByronWallet
-    , ApiBytesT
     , ApiCoinSelectionT
     , ApiConstructTransactionDataT
     , ApiConstructTransactionT
@@ -204,7 +204,6 @@ import Cardano.Wallet.Api.Types
     , ApiWalletPassphrase
     , ApiWalletSignData
     , ApiWalletUtxoSnapshot
-    , Base (Base64)
     , ByronWalletPutPassphraseData
     , Iso8601Time
     , KeyFormat
@@ -240,7 +239,7 @@ import Cardano.Wallet.Primitive.Types.Coin
 import Cardano.Wallet.Primitive.Types.TokenPolicy
     ( TokenName, TokenPolicyId )
 import Cardano.Wallet.Primitive.Types.Tx
-    ( SerialisedTx )
+    ( SealedTx )
 import Cardano.Wallet.Registry
     ( HasWorkerCtx (..), WorkerLog, WorkerRegistry )
 import Cardano.Wallet.TokenMetadata
@@ -1057,7 +1056,7 @@ type Proxy_ =
 -- | https://input-output-hk.github.io/cardano-wallet/api/#operation/postExternalTransaction
 type PostExternalTransaction = "proxy"
     :> "transactions"
-    :> ReqBody '[OctetStream] (ApiBytesT 'Base64 SerialisedTx)
+    :> ReqBody '[OctetStream] (ApiT SealedTx)
     :> PostAccepted '[JSON] ApiTxId
 
 {-------------------------------------------------------------------------------
@@ -1070,7 +1069,7 @@ data ApiLayer s (k :: Depth -> Type -> Type)
         (Tracer IO (WorkerLog WalletId WalletWorkerLog))
         (Block, NetworkParameters, SyncTolerance)
         (NetworkLayer IO (Block))
-        (TransactionLayer k)
+        (TransactionLayer k SealedTx)
         (DBFactory IO s k)
         (WorkerRegistry WalletId (DBLayer IO s k))
         (TokenMetadataClient IO)

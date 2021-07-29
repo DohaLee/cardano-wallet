@@ -52,6 +52,7 @@ module Cardano.Wallet.Api
 
     , ShelleyTransactions
         , ConstructTransaction
+        , BalanceTransaction
         , SignTransaction
         , ListTransactions
         , GetTransaction
@@ -167,6 +168,7 @@ import Cardano.Wallet.Api.Types
     , ApiAddressInspectData
     , ApiAddressT
     , ApiAsset
+    , ApiBalanceTransactionPostDataT
     , ApiByronWallet
     , ApiCoinSelectionT
     , ApiConstructTransactionDataT
@@ -514,6 +516,7 @@ type SelectCoins n = "wallets"
 type ShelleyTransactions n =
          ConstructTransaction n
     :<|> SignTransaction n
+    :<|> BalanceTransaction n
     :<|> ListTransactions n
     :<|> GetTransaction n
     :<|> DeleteTransaction
@@ -533,6 +536,13 @@ type SignTransaction n = "wallets"
     :> "transactions-sign"
     :> ReqBody '[JSON] ApiSignTransactionPostData
     :> PostAccepted '[JSON] ApiSignedTransaction
+
+-- | https://input-output-hk.github.io/cardano-wallet/api/#operation/balanceTransaction
+type BalanceTransaction n = "wallets"
+    :> Capture "walletId" (ApiT WalletId)
+    :> "transactions-balance"
+    :> ReqBody '[JSON] (ApiBalanceTransactionPostDataT n)
+    :> PostAccepted '[JSON] (ApiConstructTransactionT n)
 
 -- | https://input-output-hk.github.io/cardano-wallet/api/#operation/postTransaction
 type CreateTransactionOld n = "wallets"

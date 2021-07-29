@@ -62,6 +62,7 @@ import Cardano.Wallet.Api.Types
     , ApiAddressDataPayload (..)
     , ApiAddressInspect (..)
     , ApiAsset (..)
+    , ApiBalanceTransactionPostData (..)
     , ApiBase64
     , ApiBlockInfo (..)
     , ApiBlockReference (..)
@@ -83,6 +84,7 @@ import Cardano.Wallet.Api.Types
     , ApiEra (..)
     , ApiEraInfo (..)
     , ApiErrorCode (..)
+    , ApiExternalInput (..)
     , ApiFee (..)
     , ApiForeignStakeKey
     , ApiHealthCheck (..)
@@ -128,8 +130,10 @@ import Cardano.Wallet.Api.Types
     , ApiT (..)
     , ApiTransaction (..)
     , ApiTxId (..)
+    , ApiTxIn (..)
     , ApiTxInput (..)
     , ApiTxMetadata (..)
+    , ApiTxOut (..)
     , ApiUtxoStatistics (..)
     , ApiVerificationKeyShared (..)
     , ApiVerificationKeyShelley (..)
@@ -495,6 +499,10 @@ spec = parallel $ do
             jsonRoundtripAndGolden $ Proxy @(ApiConstructTransaction ('Testnet 0))
             jsonRoundtripAndGolden $ Proxy @ApiMultiDelegationAction
             jsonRoundtripAndGolden $ Proxy @ApiSignTransactionPostData
+            jsonRoundtripAndGolden $ Proxy @(ApiBalanceTransactionPostData ('Testnet 0))
+            jsonRoundtripAndGolden $ Proxy @(ApiTxOut ('Testnet 0))
+            jsonRoundtripAndGolden $ Proxy @(ApiExternalInput ('Testnet 0))
+            jsonRoundtripAndGolden $ Proxy @ApiTxIn
             jsonRoundtripAndGolden $ Proxy @ApiSignedTransaction
             jsonRoundtripAndGolden $ Proxy @(PostTransactionOldData ('Testnet 0))
             jsonRoundtripAndGolden $ Proxy @(PostTransactionFeeOldData ('Testnet 0))
@@ -1008,6 +1016,15 @@ spec = parallel $ do
                     { transaction = transaction (x :: ApiSignTransactionPostData)
                     , passphrase = passphrase (x :: ApiSignTransactionPostData)
                     , withdrawal = withdrawal (x :: ApiSignTransactionPostData)
+                    }
+            in
+                x' === x .&&. show x' === show x
+        it "ApiBalanceTransactionPostData" $ property $ \x ->
+            let
+                x' = ApiBalanceTransactionPostData
+                    { transaction = transaction (x :: ApiBalanceTransactionPostData ('Testnet 0))
+                    , signatories = signatories (x :: ApiBalanceTransactionPostData ('Testnet 0))
+                    , inputs = inputs (x :: ApiBalanceTransactionPostData ('Testnet 0))
                     }
             in
                 x' === x .&&. show x' === show x
@@ -1923,6 +1940,32 @@ instance Arbitrary ApiSignTransactionPostData where
         <*> arbitrary
         <*> arbitrary
 
+instance Arbitrary (Hash "Datum") where
+    arbitrary = Hash . B8.pack <$> replicateM 32 arbitrary
+
+instance Arbitrary (ApiTxOut n) where
+    arbitrary = ApiTxOut
+        <$> ((, Proxy @n) <$> arbitrary)
+        <*> arbitrary
+        <*> arbitrary
+        <*> arbitrary
+
+instance Arbitrary ApiTxIn where
+    arbitrary = ApiTxIn
+        <$> arbitrary
+        <*> choose (0, 255)
+
+instance Arbitrary (ApiExternalInput n) where
+    arbitrary = ApiExternalInput
+        <$> arbitrary
+        <*> arbitrary
+
+instance Arbitrary (ApiBalanceTransactionPostData n) where
+    arbitrary = ApiBalanceTransactionPostData
+        <$> arbitrary
+        <*> arbitrary
+        <*> arbitrary
+
 instance Arbitrary (PostTransactionOldData n) where
     arbitrary = PostTransactionOldData
         <$> arbitrary
@@ -2483,6 +2526,12 @@ instance ToSchema ApiTxMetadata where
 
 instance ToSchema ApiSignTransactionPostData where
     declareNamedSchema _ = declareSchemaForDefinition "ApiSignTransactionPostData"
+
+instance Typeable n => ToSchema (ApiExternalInput n) where
+    declareNamedSchema _ = declareSchemaForDefinition "ApiExternalInput"
+
+instance Typeable n => ToSchema (ApiBalanceTransactionPostData n) where
+    declareNamedSchema _ = declareSchemaForDefinition "ApiBalanceTransactionPostData"
 
 instance ToSchema ApiSignedTransaction where
     -- fixme: tests don't seem to like allOf

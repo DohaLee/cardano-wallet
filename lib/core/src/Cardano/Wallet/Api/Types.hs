@@ -993,6 +993,7 @@ data ApiNetworkParameters = ApiNetworkParameters
     , decentralizationLevel :: !(Quantity "percent" Percentage)
     , desiredPoolNumber :: !Word16
     , minimumUtxoValue :: !(Quantity "lovelace" Natural)
+    , maximumTokenBundleSize :: !(Quantity "byte" Word16)
     , eras :: !ApiEraInfo
     } deriving (Eq, Generic, Show)
 
@@ -1039,6 +1040,8 @@ toApiNetworkParameters (NetworkParameters gp sp pp) txConstraints toEpochInfo = 
             MinimumUTxOValueCostPerWord _perWord ->
                 txOutputMinimumAdaQuantity txConstraints TokenMap.empty
         , eras = apiEras
+        , maximumTokenBundleSize = pp ^.
+            (#txParameters . #getTokenBundleMaxSize . #unTokenBundleMaxSize)
         }
   where
     toApiCoin = Quantity . fromIntegral . unCoin

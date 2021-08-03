@@ -14,6 +14,6 @@ maxBlockExUnits:
   exUnitsMem: 1
   exUnitsSteps: 1
 
-maxValueSize: 4000
+maxValueSize: 800
 collateralPercentage: 100
 maxCollateralInputs: 1

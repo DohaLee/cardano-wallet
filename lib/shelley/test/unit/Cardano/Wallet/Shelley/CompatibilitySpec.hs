@@ -39,6 +39,8 @@ import Cardano.Mnemonic
     )
 import Cardano.Wallet.Api.Types
     ( DecodeAddress (..), DecodeStakeAddress (..), EncodeStakeAddress (..) )
+import Cardano.Wallet.Byron.Compatibility
+    ( maryTokenBundleMaxSize )
 import Cardano.Wallet.Primitive.AddressDerivation
     ( Depth (..)
     , NetworkDiscriminant (..)
@@ -51,7 +53,7 @@ import Cardano.Wallet.Primitive.AddressDerivation.Byron
 import Cardano.Wallet.Primitive.AddressDerivation.Shelley
     ( ShelleyKey (..) )
 import Cardano.Wallet.Primitive.Types
-    ( DecentralizationLevel (..), SlotId (..) )
+    ( DecentralizationLevel (..), SlotId (..), TokenBundleMaxSize (..) )
 import Cardano.Wallet.Primitive.Types.Address
     ( Address (..) )
 import Cardano.Wallet.Primitive.Types.Coin
@@ -110,6 +112,8 @@ import Data.Maybe
     ( fromMaybe )
 import Data.Proxy
     ( Proxy (..) )
+import Data.Quantity
+    ( Quantity (..) )
 import Data.Ratio
     ( Ratio, (%) )
 import Data.Text
@@ -420,7 +424,8 @@ prop_assessTokenBundleSize_enlarge b1' b2' =
             === OutputTokenBundleSizeExceedsLimit
         ]
   where
-    assess = assessTokenBundleSize tokenBundleSizeAssessor
+    assess = assessTokenBundleSize
+        $ tokenBundleSizeAssessor maryTokenBundleMaxSize
     b1 = unVariableSize128 $ getBlind b1'
     b2 = unVariableSize16 $ getBlind b2'
 
@@ -430,8 +435,9 @@ prop_assessTokenBundleSize_enlarge b1' b2' =
 prop_assessTokenBundleSize_shrink
     :: Blind (VariableSize128 TokenBundle)
     -> Blind (VariableSize16 TokenBundle)
+    -> TokenBundleMaxSize
     -> Property
-prop_assessTokenBundleSize_shrink b1' b2' =
+prop_assessTokenBundleSize_shrink b1' b2' maxSize =
     assess b1 == TokenBundleSizeWithinLimit ==> conjoin
         [ assess (b1 `TokenBundle.difference` b2)
             === TokenBundleSizeWithinLimit
@@ -439,7 +445,7 @@ prop_assessTokenBundleSize_shrink b1' b2' =
             === TokenBundleSizeWithinLimit
         ]
   where
-    assess = assessTokenBundleSize tokenBundleSizeAssessor
+    assess = assessTokenBundleSize (tokenBundleSizeAssessor maxSize)
     b1 = unVariableSize128 $ getBlind b1'
     b2 = unVariableSize16 $ getBlind b2'
 
@@ -453,13 +459,19 @@ unit_assessTokenBundleSize_fixedSizeBundle
     -- ^ Fixed size bundle
     -> TokenBundleSizeAssessment
     -- ^ Expected size assessment
+    -> TokenBundleMaxSize
+    -- ^ TokenBundle assessor function
     -> Int
     -- ^ Expected min length (bytes)
     -> Int
     -- ^ Expected max length (bytes)
     -> Property
 unit_assessTokenBundleSize_fixedSizeBundle
-    bundle expectedAssessment expectedMinLengthBytes expectedMaxLengthBytes =
+    bundle
+    expectedAssessment
+    maxSize
+    expectedMinLengthBytes
+    expectedMaxLengthBytes =
         withMaxSuccess 100 $
         counterexample counterexampleText $
         conjoin . fmap property $
@@ -468,7 +480,9 @@ unit_assessTokenBundleSize_fixedSizeBundle
             , actualLengthBytes <= expectedMaxLengthBytes
             ]
   where
-    actualAssessment = assessTokenBundleSize tokenBundleSizeAssessor bundle
+    actualAssessment = assessTokenBundleSize
+        (tokenBundleSizeAssessor maxSize)
+        bundle
     actualLengthBytes = computeTokenBundleSerializedLengthBytes bundle
     counterexampleText = unlines
         [ "Expected min length bytes:"
@@ -488,6 +502,7 @@ unit_assessTokenBundleSize_fixedSizeBundle_32
 unit_assessTokenBundleSize_fixedSizeBundle_32 (Blind (FixedSize32 b)) =
     unit_assessTokenBundleSize_fixedSizeBundle b
         TokenBundleSizeWithinLimit
+        maryTokenBundleMaxSize
         2116 2380
 
 unit_assessTokenBundleSize_fixedSizeBundle_48
@@ -495,6 +510,7 @@ unit_assessTokenBundleSize_fixedSizeBundle_48
 unit_assessTokenBundleSize_fixedSizeBundle_48 (Blind (FixedSize48 b)) =
     unit_assessTokenBundleSize_fixedSizeBundle b
         TokenBundleSizeWithinLimit
+        maryTokenBundleMaxSize
         3172 3564
 
 unit_assessTokenBundleSize_fixedSizeBundle_64
@@ -502,6 +518,7 @@ unit_assessTokenBundleSize_fixedSizeBundle_64
 unit_assessTokenBundleSize_fixedSizeBundle_64 (Blind (FixedSize64 b)) =
     unit_assessTokenBundleSize_fixedSizeBundle b
         OutputTokenBundleSizeExceedsLimit
+        maryTokenBundleMaxSize
         4228 4748
 
 unit_assessTokenBundleSize_fixedSizeBundle_128
@@ -509,6 +526,7 @@ unit_assessTokenBundleSize_fixedSizeBundle_128
 unit_assessTokenBundleSize_fixedSizeBundle_128 (Blind (FixedSize128 b)) =
     unit_assessTokenBundleSize_fixedSizeBundle b
         OutputTokenBundleSizeExceedsLimit
+        maryTokenBundleMaxSize
         8452 9484
 
 toKeyHash :: Text -> Script KeyHash
@@ -804,6 +822,23 @@ instance Arbitrary (VariableSize16 TokenBundle) where
 instance Arbitrary (VariableSize128 TokenBundle) where
     arbitrary = VariableSize128 <$> genVariableSizedTokenBundle 128
     -- No shrinking
+
+instance Arbitrary TokenBundleMaxSize where
+    arbitrary = TokenBundleMaxSize . Quantity <$>
+        oneof
+          [ arbitrary @Word16
+
+          -- Generate values close to the mainnet value of 4000.
+          -- Over/underflow doesn't matter.
+          , fromIntegral . (4000 +) <$> arbitrary @Int
+
+          -- Purposefully generate boundary values.
+          , (maxBound -) . fromIntegral <$> arbitrary @Int
+          ]
+    shrink (TokenBundleMaxSize (Quantity s)) =
+        map (TokenBundleMaxSize . Quantity . fromIntegral)
+        . shrink @Int
+        $ fromIntegral s
 
 --
 -- Helpers

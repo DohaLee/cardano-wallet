@@ -1157,6 +1157,8 @@ spec = parallel $ do
                         minimumUtxoValue (x :: ApiNetworkParameters)
                     , eras =
                         eras (x :: ApiNetworkParameters)
+                    , maximumCollateralInputs =
+                        maximumCollateralInputs (x :: ApiNetworkParameters)
                     }
             in
             x' === x .&&. show x' === show x

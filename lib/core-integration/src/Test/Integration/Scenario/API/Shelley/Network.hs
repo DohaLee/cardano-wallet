@@ -75,6 +75,8 @@ spec = describe "SHELLEY_NETWORK" $ do
             , expectField #epochLength (`shouldBe` Quantity epochLengthValue)
             , expectField #securityParameter (`shouldBe` Quantity securityParameterValue)
             , expectField #activeSlotCoefficient (`shouldBe` Quantity 50.0)
+            -- value from alonzo-genesis.yaml:
+            , expectField #maximumCollateralInputs (`shouldBe` 1)
             ]
             ++ map (expectEraField (`shouldNotBe` Nothing)) knownEras
             ++ map (expectEraField (`shouldBe` Nothing)) unknownEras

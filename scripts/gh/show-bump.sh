@@ -1,4 +1,6 @@
-#!/usr/bin/env bash
+#! /usr/bin/env nix-shell
+#! nix-shell -i bash -p nix coreutils gnugrep gnused html-xml-utils
+
 # Needs gnused and W3C html-xml-utils
 # shellcheck disable=SC2016
 

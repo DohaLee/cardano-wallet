@@ -96,6 +96,7 @@ import Cardano.Wallet.Primitive.Types
     , SlotInEpoch (..)
     , SlotNo (..)
     , SortOrder (..)
+    , TokenBundleMaxSize (..)
     , TxParameters (..)
     , WalletDelegation (..)
     , WalletDelegationStatus (..)
@@ -652,6 +653,7 @@ instance Arbitrary TxParameters where
     arbitrary = TxParameters
         <$> arbitrary
         <*> fmap Quantity (choose (0, 1000))
+        <*> arbitrary
 
 instance Arbitrary FeePolicy where
     arbitrary = LinearFee

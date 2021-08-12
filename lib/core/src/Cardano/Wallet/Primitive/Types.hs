@@ -250,6 +250,8 @@ import Network.URI
     ( URI (..), parseAbsoluteURI, uriQuery, uriScheme, uriToString )
 import Numeric.Natural
     ( Natural )
+import Test.QuickCheck
+    ( Arbitrary (..), oneof )
 
 import qualified Codec.Binary.Bech32 as Bech32
 import qualified Codec.Binary.Bech32.TH as Bech32
@@ -1080,6 +1082,24 @@ newtype TokenBundleMaxSize = TokenBundleMaxSize
     deriving (Bounded, Eq, Generic, Show)
 
 instance NFData TokenBundleMaxSize
+
+instance Arbitrary TokenBundleMaxSize where
+    arbitrary = TokenBundleMaxSize . Quantity <$>
+        oneof
+          [ arbitrary @Word16
+
+          -- Generate values close to the mainnet value of 4000.
+          -- Over/underflow doesn't matter.
+          , fromIntegral . (4000 +) <$> arbitrary @Int
+
+          -- Purposefully generate boundary values.
+          , (maxBound -) . fromIntegral <$> arbitrary @Int
+          ]
+    shrink (TokenBundleMaxSize (Quantity s)) =
+        map (TokenBundleMaxSize . Quantity . fromIntegral)
+        . shrink @Int
+        $ fromIntegral s
+
 
 -- | Parameters that relate to the construction of __transactions__.
 --

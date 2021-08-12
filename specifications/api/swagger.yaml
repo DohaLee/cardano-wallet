@@ -1776,7 +1776,7 @@ components:
         - desired_pool_number
         - minimum_utxo_value
         - eras
-        - maximum_collateral_inputs
+        - maximum_collateral_input_count
       properties:
         genesis_block_hash: *blockId
         blockchain_start_time: *date

@@ -94,13 +94,16 @@ import Data.Generics.Internal.VL.Lens
     ( view )
 import Data.List.NonEmpty
     ( NonEmpty )
-import qualified Data.List.NonEmpty as NE
 import Data.Text
     ( Text )
+import Data.Word
+    ( Word64 )
 import Fmt
     ( Buildable (..), genericF )
 import GHC.Generics
     ( Generic )
+
+import qualified Data.List.NonEmpty as NE
 
 data TransactionLayer k tx = TransactionLayer
     { mkTransactionBody
@@ -166,6 +169,12 @@ data TransactionLayer k tx = TransactionLayer
         :: tx
         -> Tx
         -- ^ Decode an externally-signed transaction to the chain producer
+
+    , updateTx
+        :: tx
+        -> ( [TxIn], [TxOut] )
+        -> (tx, Word64)
+        -- ^ Update tx by adding additional inputs and outputs and give recalculated fee
     }
     deriving Generic
 

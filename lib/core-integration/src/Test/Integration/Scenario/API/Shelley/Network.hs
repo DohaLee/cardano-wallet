@@ -31,6 +31,7 @@ import Test.Integration.Framework.DSL
     , epochLengthValue
     , expectField
     , expectResponseCode
+    , maximumCollateralInputCountValue
     , minUTxOValue
     , request
     , securityParameterValue
@@ -75,8 +76,8 @@ spec = describe "SHELLEY_NETWORK" $ do
             , expectField #epochLength (`shouldBe` Quantity epochLengthValue)
             , expectField #securityParameter (`shouldBe` Quantity securityParameterValue)
             , expectField #activeSlotCoefficient (`shouldBe` Quantity 50.0)
-            -- value from alonzo-genesis.yaml:
-            , expectField #maximumCollateralInputCount (`shouldBe` 1)
+            , expectField #maximumCollateralInputCount
+                  (`shouldBe` maximumCollateralInputCountValue (_mainEra ctx))
             ]
             ++ map (expectEraField (`shouldNotBe` Nothing)) knownEras
             ++ map (expectEraField (`shouldBe` Nothing)) unknownEras

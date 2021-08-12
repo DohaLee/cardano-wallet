@@ -1612,7 +1612,7 @@ x-minimumCoins: &minimumCoins
   minItems: 0
   items: *amount
 
-x-collateralInputsNumber: &collateralInputsNumber
+x-collateralInputCount: &collateralInputCount
   type: integer
   minimum: 0
   example: 3
@@ -1797,8 +1797,8 @@ components:
             With Alonzo, `minimum_utxo_value` is not a real protocol parameter, but rather
             derived from from the Alonzo genesis `adaPerUTxOWord`.
         eras: *ApiEraInfo
-        maximum_collateral_inputs:
-          <<: *collateralInputsNumber
+        maximum_collateral_input_count:
+          <<: *collateralInputCount
           description: |
             The maximum number of collateral inputs that can be used in a single transaction.
 

@@ -167,6 +167,10 @@ module Cardano.Wallet
     , ErrGetTransaction (..)
     , ErrNoSuchTransaction (..)
     , ErrStartTimeLaterThanEndTime (..)
+    , ErrCannotJoin (..)
+    , ErrCannotQuit (..)
+    , ErrMkTransaction
+    , ErrSelectionCriteria (..)
 
     -- ** Root Key
     , withRootKey

@@ -1303,7 +1303,7 @@ dummyTransactionLayer = TransactionLayer
             x = view #witness $ keyStoreLookup keyStore mkWit txin
             mkWit sk _addr = sk
             tx = unsafeSealedTxFromBytes (B8.pack $ show $ fromJust x)
-        in SignTransactionResult tx [] []
+        in SignTransactionResult tx [] [] []
     , initSelectionCriteria =
         error "dummyTransactionLayer: initSelectionCriteria not implemented"
     , calcMinimumCost =
@@ -1314,8 +1314,8 @@ dummyTransactionLayer = TransactionLayer
         error "dummyTransactionLayer: constraints not implemented"
     , decodeTx = \_sealed ->
             Tx (Hash "") Nothing mempty mempty mempty Nothing
-    , updateTx = \_sealed _insAndOuts ->
-            Tx (Hash "") Nothing mempty mempty mempty Nothing
+    , updateTx = \sealed _insAndOuts ->
+            (sealed, 10000)
     }
 
 
